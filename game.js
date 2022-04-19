@@ -1,9 +1,12 @@
 const FLOOR_HEIGHT = 48
 const JUMP_FORCE = 800
 const SPEED = 480
+const MOVE_SPEED = 480
 
 // 
 canSecondJump = false
+
+
 
 // initialize context
 kaboom()
@@ -11,6 +14,101 @@ kaboom()
 // load assets
 loadSprite("ferdi", "https://raw.githubusercontent.com/replit/kaboom/master/assets/sprites/bean.png")
 loadSprite('felix', 'https://raw.githubusercontent.com/replit/kaboom/master/assets/sprites/coin.png')
+
+scene('intro', () => {
+    function addDialog() {
+		const h = 160
+		const pad = 16
+		const bg = add([
+			pos(0, height() - h),
+			rect(width(), h),
+			color(0, 0, 0),
+			z(100),
+		])
+		const txt = add([
+			text("", {
+				width: width(),
+			}),
+			pos(0 + pad, height() - h + pad),
+			z(100),
+		])
+		bg.hidden = true
+		txt.hidden = true
+		return {
+			say(t) {
+				txt.text = t
+				bg.hidden = false
+				txt.hidden = false
+			},
+			dismiss() {
+				if (!this.active()) {
+					return
+				}
+				txt.text = ""
+				bg.hidden = true
+				txt.hidden = true
+			},
+			active() {
+				return !bg.hidden
+			},
+			destroy() {
+				bg.destroy()
+				txt.destroy()
+			},
+		}
+	}
+
+    const dialog = addDialog()
+
+    // define gravity
+	gravity(2400)
+
+	// add a game object to screen
+	const player = add([
+		// list of components
+		sprite("ferdi"),
+		pos(80, 40),
+		area(),
+		body(),
+	])
+
+	// floor
+	add([
+		rect(width(), FLOOR_HEIGHT),
+		outline(4),
+		pos(0, height()),
+		origin("botleft"),
+		area(),
+		solid(),
+		color(127, 200, 255),
+	])
+
+	function jump() {
+		if (player.isGrounded()) {
+			player.jump(JUMP_FORCE)
+            canSecondJump = true
+		}
+        else if (canSecondJump){
+            player.jump(JUMP_FORCE * 0.75)
+            canSecondJump = false
+        }
+	}
+
+    player.onGround(() => {
+        canSecondJump = false
+    })
+
+	// jump when user press space
+	onKeyPress("space", jump)
+	onClick(jump)
+    onKeyDown("left", () => {
+		player.move(-MOVE_SPEED, 0)
+	})
+
+	onKeyDown("right", () => {
+		player.move(MOVE_SPEED, 0)
+	})
+})
 
 scene("game", () => {
 
@@ -83,7 +181,6 @@ scene("game", () => {
 	player.onCollide("tree", () => {
 		// go to "lose" scene and pass the score
 		go("lose", score)
-		burp()
 		addKaboom(player.pos)
 	})
 
@@ -126,4 +223,4 @@ scene("lose", (score) => {
 
 })
 
-go("game")
+go("intro")
